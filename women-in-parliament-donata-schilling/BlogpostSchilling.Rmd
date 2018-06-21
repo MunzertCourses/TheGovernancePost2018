@@ -1,0 +1,277 @@
+---
+title: 'When Political Representation Does Not Lead to Equality: The Influence of Women in National Parliaments'
+author: "Donata Schilling"
+date: "21.6.2018"
+output: 
+  html_document:
+    df_print: paged
+
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.align = "center")
+```
+
+
+Let's try a straightforward exercise. Name a prominent female politician that is part of the German Bundestag right now. Easy, right? Now try to name somebody that is not Angela Merkel. Still pretty straightforward? How about a single female politician that was part of the Bundestag in the 1950s, 1960s or 1970s? Can you come up with any? 
+
+Even before that time, in 1949, less than a tenth of the Bundestag consisted of female members. Today, the share has risen to almost 40 percent. Accompanying that rise was a steady increase of the prominence of female politicians. Today, names like Ursula von der Leyen or Andrea Nahles are as much an integral part of daily political news as Wolfgang Schäuble or Sigmar Gabriel. This trend is not limited to Germany but very much an international phenomenon.
+
+While ten years ago, the average share of women in national parliaments worldwide was 18.1%, today [it has risen](http://archive.ipu.org/wmn-e/arc/world010418.htm) to 23.8%. 30.7% of the members of the German Bundestag are women. The country ranks somewhere in the upper middle field of female political representation in national parliaments. In a [comparison](http://archive.ipu.org/wmn-e/arc/classif010418.htm) of 190 countries, Germany occupies the 46th position of the share of women in parliament, right after Tunisia, Cameroon and Trinidad and Tobago.
+
+
+
+```{r, include=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(scales)
+library(legislatoR)
+library(magrittr)
+library(dplyr)
+library(ggthemes)
+library(scales)
+library(rvest)
+library(stringr)
+library(plotly)
+library(haven)
+library(DT)
+
+url <- read_html("http://archive.ipu.org/wmn-e/arc/classif010418.htm")
+parliaments <- html_table(url, header = TRUE, fill = TRUE) %>% .[[3]]
+index <- as.vector(parliaments[2,1:10])
+names(parliaments) <- index
+parliaments <-  parliaments[3:195,1:6] %>% .[seq(1,195,5),]
+parliaments$`% W` <- parliaments$`% W` %>% str_replace_all("%", "") %>%  as.numeric()/100
+#parliaments$dummy <- ifelse(parliaments$Country == "Germany", 1, 0)
+
+p <- ggplot(parliaments, aes(x=reorder(Country, desc(`% W`)), y=`% W`)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = percent_format()) +
+  geom_segment(aes(x="Germany", xend ="Germany", y=0.34, yend=0.32),size = 1, colour = "red", arrow = arrow(length = unit(0.1, "cm"))) +
+  theme(axis.title = element_blank(), axis.text.x = element_text(angle = 60, hjust = 1), plot.title = element_text(size = 10), panel.background = element_rect(fill="white"),
+            panel.grid.minor.y = element_line(size=0.5),
+            panel.grid.major = element_line(colour = "lightgrey"),
+            plot.background = element_rect(fill="white")) +
+  labs(y='Share of Women in Parliament')
+```
+
+<center> Women in Parliaments Worldwide </center>
+
+```{r, echo=F, fig.cap="Share of women in parliament in every fifth entry from a list of 195 countries for readability. Data from the Inter-Parliamentary Union."}
+p
+```
+
+
+
+
+The question, however, remains whether  the political representation of women in parliaments actually means political equality. [Research](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1445041) on women in politics has underlined the important difference between descriptive and substantive representation, that is, the difference between the number of women in parliaments and their actual political power. At the very least, a weak link between the two factors is obvious: women cannot exercise any power in national parliaments if they are not represented there. But there are stronger and more interesting relationships to be found.
+
+Beyond the contemporary exercise of power in parliaments, the representation and the perception of women in politics also shape the next generation of potential politicians. A persistent gender gap in political knowledge seems to [decrease with higher levels of (descriptive) female elected representation](https://onlinelibrary.wiley.com/doi/full/10.1111/ajps.12353). However, this is the case only for respondents aged between 18 and 21, who are in the phase where political opinions are usually formed. Other research (focusing on [Switzerland](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12155) and the [United States](https://onlinelibrary.wiley.com/doi/abs/10.1111/ajps.12351)) shows that more women in major political positions (that is, in places where they can exercise substantive representation) at least temporarily motivate other women to run for office. 
+Clearly, both descriptive and substantive representation matter if women are to have an equal stake in the political sphere.
+
+So, what does the picture look like for Germany? Does the increased share of female members in the Bundestag also correspond to the increased political importance of these women? In order to investigate how descriptive representation has influenced substantive representation, I applied <span title = "The  algorithm is a procedure to analyse the relative importance of a body of documents, mostly webpages, according to their internal link structure. It weighs the documents proportional to the amount of links pointing towards them. Hence, the more often a webpage has been linked somewhere on the internet, the higher its score, indicating a higher relative centrality in the internal link structure.">
+[PageRank analysis](https://de.wikipedia.org/wiki/PageRank) </span> to the Wikipedia pages of all members of the Bundestag of the legislative sessions between 1949 and 2013. This means analysing each body of pages separately, including MdBs that were part of more than one legislative session. I then rank members of each legislative session according to their PageRank and calculate the share of women in the top 100 ranks. 
+
+The Wikipedia rank is used as an indicator of political importance based on the observation of their increased political influence in the form of committee or cabinet posts leads to additional coverage on Wikipedia and increased potential for links pointing towards an <a href = "" title = "An important limitation to this approach is that all ranks are calculated on the basis of today’s articles, not the versions at the time during which the person was holding an office. When, for example, Angela Merkel became chancellor, her relative PageRank presumably increased because more links pointed towards her Wikipedia entry. PageRanks for earlier legislatures are therefore probably not fully representative of the real-time internal link structure at that point in time."> article</a>. After, for instance, Martin Schulz announced that Andrea Nahles would become his successor as SPD party leader, a link on his profile pointing towards her profile was added, thus increasing her Wikipedia PageRank.
+
+
+```{r, include = F}
+load("ger_politicians.RDa")
+load("pagerank1.RDa")
+load("pagerank2.RDa")
+load("pagerank4.RDa")
+load("pagerank6.RDa")
+load("pagerank8.RDa")
+load("pagerank10.RDa")
+load("pagerank12.RDa")
+load("pagerank14.RDa")
+load("pagerank16.RDa")
+load("pagerank18.RDa")
+load("pagerank3.RDa")
+load("pagerank5.RDa")
+load("pagerank7.RDa")
+load("pagerank9.RDa")
+load("pagerank11.RDa")
+load("pagerank13.RDa")
+load("pagerank15.RDa")
+load("pagerank17.RDa")
+
+ger_politicians$dummy <- ifelse(ger_politicians$sex == "female", 1,0)
+ger_politicians$session <- as.numeric(ger_politicians$session)
+
+# Rank and add sex dummies -------------------------------------------------------------
+
+
+ger_pagerank1 <-ger_pagerank1 %>% arrange(desc(pagerank))
+ger_pagerank2 <-ger_pagerank2 %>% arrange(desc(pagerank)) 
+ger_pagerank4 <-ger_pagerank4 %>% arrange(desc(pagerank)) 
+ger_pagerank6 <-ger_pagerank6 %>% arrange(desc(pagerank)) 
+ger_pagerank8 <-ger_pagerank8 %>% arrange(desc(pagerank)) 
+ger_pagerank10 <-ger_pagerank10 %>% arrange(desc(pagerank)) 
+ger_pagerank12 <-ger_pagerank12 %>% arrange(desc(pagerank)) 
+ger_pagerank14 <-ger_pagerank14 %>% arrange(desc(pagerank)) 
+ger_pagerank16 <-ger_pagerank16 %>% arrange(desc(pagerank)) 
+ger_pagerank18 <-ger_pagerank18 %>% arrange(desc(pagerank)) 
+ger_pagerank3 <-ger_pagerank3 %>% arrange(desc(pagerank)) 
+ger_pagerank5 <-ger_pagerank5 %>% arrange(desc(pagerank)) 
+ger_pagerank7 <-ger_pagerank7 %>% arrange(desc(pagerank)) 
+ger_pagerank9 <-ger_pagerank9 %>% arrange(desc(pagerank)) 
+ger_pagerank11 <-ger_pagerank11 %>% arrange(desc(pagerank)) 
+ger_pagerank13 <-ger_pagerank13 %>% arrange(desc(pagerank)) 
+ger_pagerank15 <-ger_pagerank15 %>% arrange(desc(pagerank)) 
+ger_pagerank17 <-ger_pagerank17 %>% arrange(desc(pagerank)) 
+
+
+ger_pagerank1$dummy <- ifelse(ger_pagerank1$sex == "female", 1,0)
+ger_pagerank2$dummy <- ifelse(ger_pagerank2$sex == "female", 1,0)
+ger_pagerank4$dummy <- ifelse(ger_pagerank4$sex == "female", 1,0)
+ger_pagerank6$dummy <- ifelse(ger_pagerank6$sex == "female", 1,0)
+ger_pagerank8$dummy <- ifelse(ger_pagerank8$sex == "female", 1,0)
+ger_pagerank10$dummy <- ifelse(ger_pagerank10$sex == "female", 1,0)
+ger_pagerank12$dummy <- ifelse(ger_pagerank12$sex == "female", 1,0)
+ger_pagerank14$dummy <- ifelse(ger_pagerank14$sex == "female", 1,0)
+ger_pagerank16$dummy <- ifelse(ger_pagerank16$sex == "female", 1,0)
+ger_pagerank18$dummy <- ifelse(ger_pagerank18$sex == "female", 1,0)
+ger_pagerank3$dummy <- ifelse(ger_pagerank3$sex == "female", 1,0)
+ger_pagerank5$dummy <- ifelse(ger_pagerank5$sex == "female", 1,0)
+ger_pagerank7$dummy <- ifelse(ger_pagerank7$sex == "female", 1,0)
+ger_pagerank9$dummy <- ifelse(ger_pagerank9$sex == "female", 1,0)
+ger_pagerank11$dummy <- ifelse(ger_pagerank11$sex == "female", 1,0)
+ger_pagerank13$dummy <- ifelse(ger_pagerank13$sex == "female", 1,0)
+ger_pagerank15$dummy <- ifelse(ger_pagerank15$sex == "female", 1,0)
+ger_pagerank17$dummy <- ifelse(ger_pagerank17$sex == "female", 1,0)
+
+
+# Calculate share of women in top 10, top 50 and top 100 ------------------
+
+pagerankshare10 <- vector()
+pagerankshare10[1] <- ger_pagerank1[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[2] <- ger_pagerank2[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[4] <- ger_pagerank4[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[6] <- ger_pagerank6[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[8] <- ger_pagerank8[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[10] <- ger_pagerank10[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[12] <- ger_pagerank12[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[14] <- ger_pagerank14[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[16] <- ger_pagerank16[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[18] <- ger_pagerank18[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[3] <- ger_pagerank3[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[5] <- ger_pagerank5[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[7] <- ger_pagerank7[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[9] <- ger_pagerank9[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[11] <- ger_pagerank11[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[13] <- ger_pagerank13[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[15] <- ger_pagerank15[1:10,] %>% .$dummy %>% sum()/10
+pagerankshare10[17] <- ger_pagerank17[1:10,] %>% .$dummy %>% sum()/10
+
+pagerankshare50 <- vector()
+pagerankshare50[1] <- ger_pagerank1[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[2] <- ger_pagerank2[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[4] <- ger_pagerank4[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[6] <- ger_pagerank6[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[8] <- ger_pagerank8[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[10] <- ger_pagerank10[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[12] <- ger_pagerank12[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[14] <- ger_pagerank14[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[16] <- ger_pagerank16[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[18] <- ger_pagerank18[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[3] <- ger_pagerank3[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[5] <- ger_pagerank5[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[7] <- ger_pagerank7[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[9] <- ger_pagerank9[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[11] <- ger_pagerank11[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[13] <- ger_pagerank13[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[15] <- ger_pagerank15[1:50,] %>% .$dummy %>% sum()/50
+pagerankshare50[17] <- ger_pagerank17[1:50,] %>% .$dummy %>% sum()/50
+
+pagerankshare100 <- vector()
+pagerankshare100[1] <- ger_pagerank1[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[2] <- ger_pagerank2[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[4] <- ger_pagerank4[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[6] <- ger_pagerank6[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[8] <- ger_pagerank8[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[10] <- ger_pagerank10[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[12] <- ger_pagerank12[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[14] <- ger_pagerank14[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[16] <- ger_pagerank16[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[18] <- ger_pagerank18[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[3] <- ger_pagerank2[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[5] <- ger_pagerank4[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[7] <- ger_pagerank6[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[9] <- ger_pagerank8[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[11] <- ger_pagerank10[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[13] <- ger_pagerank12[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[15] <- ger_pagerank14[1:100,] %>% .$dummy %>% sum()/100
+pagerankshare100[17] <- ger_pagerank16[1:100,] %>% .$dummy %>% sum()/100
+
+
+ger_politicians$session_start <- str_replace(ger_politicians$session_start, "-[0-9]{2}-[0-9]{2}", "")
+
+
+# Tables --------------------------------------------------------------------
+
+ger_pagerank1$Rank <- seq(1,nrow(ger_pagerank1),1)
+ger_pagerank2$Rank <- seq(1,nrow(ger_pagerank2),1)
+ger_pagerank3$Rank <- seq(1,nrow(ger_pagerank3),1)
+ger_pagerank4$Rank <- seq(1,nrow(ger_pagerank4),1)
+ger_pagerank5$Rank <- seq(1,nrow(ger_pagerank5),1)
+ger_pagerank6$Rank <- seq(1,nrow(ger_pagerank6),1)
+ger_pagerank7$Rank <- seq(1,nrow(ger_pagerank7),1)
+ger_pagerank8$Rank <- seq(1,nrow(ger_pagerank8),1)
+ger_pagerank9$Rank <- seq(1,nrow(ger_pagerank9),1)
+ger_pagerank10$Rank <- seq(1,nrow(ger_pagerank10),1)
+ger_pagerank11$Rank <- seq(1,nrow(ger_pagerank11),1)
+ger_pagerank12$Rank <- seq(1,nrow(ger_pagerank12),1)
+ger_pagerank13$Rank <- seq(1,nrow(ger_pagerank13),1)
+ger_pagerank14$Rank <- seq(1,nrow(ger_pagerank14),1)
+ger_pagerank15$Rank <- seq(1,nrow(ger_pagerank15),1)
+ger_pagerank16$Rank <- seq(1,nrow(ger_pagerank16),1)
+ger_pagerank17$Rank <- seq(1,nrow(ger_pagerank17),1)
+ger_pagerank18$Rank <- seq(1,nrow(ger_pagerank18),1)
+
+names <- rbind(ger_pagerank1,ger_pagerank2,ger_pagerank3,ger_pagerank4,ger_pagerank5,ger_pagerank6,ger_pagerank7,ger_pagerank8,ger_pagerank9,ger_pagerank10,ger_pagerank11,ger_pagerank12,ger_pagerank13,ger_pagerank14,ger_pagerank15,ger_pagerank16,ger_pagerank17,ger_pagerank18) %>% group_by(session_start) %>% arrange(desc(pagerank), .by_group = T) %>% dplyr::select(c(Rank, Name = name, Year = session_start, PageRank = pagerank, Sex = sex))
+
+names$Sex <- as.factor(names$Sex)
+names$Year <- as.factor(names$Year)
+names$Rank <- as.factor(names$Rank)
+```
+
+
+<center> Rising in the Ranks: Women's Importance in the Bundestag Then and Now </center>  
+  
+```{r, echo = F}
+datatable(names, filter = "top", rownames = F, options = list(pageLength = 10, dom = "t"), autoHideNavigation = T) %>% formatRound(columns=c('PageRank'), digits=4)
+```
+
+  
+
+The table gives a first impression of how the increased presence of women in the Bundestag has increased their importance in the political sphere, that is, descriptive representation has strengthened substantive representation. Illustrating this more systematically, the graph shows the relationship between descriptive and substantive representation, measured by share of women in the top 100 PageRank scale, in the Bundestag.  It can be seen that for increases in descriptive representation, centrality in the Wikipedia link structure also increases. 
+
+Additionally, we can see a significant increase of substantive representation from 20 to almost 30 percent from 1994 to 1998. This fits the theory of a “tipping point” of female political representation that researchers in this field have been trying to identify. The theory states that only after passing a certain threshold of descriptive representation (often cited around 30%), the impact of women’s presence in parliament becomes more apparent in policy. Fittingly, the jump here happens when descriptive representation in the Bundestag rises from 26 to 31 percent. 
+
+
+```{r, include = FALSE}
+
+dat <- ger_politicians %>% group_by(session) %>% summarise(share = mean(dummy), session_start=first(session_start))
+
+dat <- cbind(dat,pagerankshare10, pagerankshare50, pagerankshare100)
+
+# Plot --------------------------------------------------------------------
+f1 <- list(size = 14, color = "grey")
+f2 <- list(size = 12, color = "grey")
+
+p <- plot_ly(dat, x=~session_start, y=~share, name = "Bundestag", type = "scatter", mode = "lines", line=list(color = 'dimgrey')) %>% 
+  add_trace(x=~session_start, y=~pagerankshare100, name = "Top100 PageRank", mode = "lines", line=list(color = 'firebrick')) %>% 
+  layout(font=list(family ="Helvetica"), yaxis = list(title = "Share", tickformat = "%", titlefont = f1, tickfont = f2),
+         xaxis = list(titlefont = f2, tickangle = 35, tickfont = f2), showlegend = F, hovermode = "compare") %>% 
+  config(displayModeBar = FALSE)
+p <- htmltools::div(p, align="center" )
+```
+
+
+<center> Women's Presence and Importance in the Bundestag Is on the Rise </center>
+```{r, echo=FALSE, warning=FALSE, fig.cap="The share of women in the Bundestag versus their share in the top 100 members ranked by PageRank."}
+p
+```
+
+
+With the help of PageRank analysis, we can observe that the increased importance of women in the Bundestag relative to their male counterparts that has accompanied the increase in the number of female parliamentarians can be observed. Although there is an important difference between women being in parliament and their actual political influence, one clearly drives the other. Let's hope that the rising numbers of women in parliament mean that future generations will actually remember their names and contributions.
